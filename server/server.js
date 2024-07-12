@@ -15,6 +15,9 @@ const __dirname = path.dirname(__filename);
 
 connectDB();
 const app = express();
+const PORT = process.env.PORT || 5000;
+const __dirnam = path.resolve()
+
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
@@ -24,12 +27,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/users', userRoutes);
 app.use('/api/recipes', recipeRoutes);
 
-app.use(express.static(path.join(__dirname, "./client/build")))
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirnam, "/client/build")))
 
-app.get('*', function (_, res) {
-    res.sendFile(path.join(__dirname, "./client/build/index.html"), function (err) {
-        res.status(500).send(err)
+    app.get("*", (req, res) => {
+        res.sendFile(path.resolve(__dirnam, "client", "build", "index.html"))
     })
-})
-const PORT = process.env.PORT || 5000;
+}
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
