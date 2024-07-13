@@ -1,15 +1,24 @@
 import { Box, Typography } from "@mui/material";
 import { NavLink } from "react-router-dom"
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react"
 
 const RecipeContent = () => {
     const [recipes, setRecipes] = useState([]);
 
     useEffect(() => {
         const fetchRecipes = async () => {
-            const { data } = await axios.get('http://localhost:5000/api/recipes');
-            setRecipes(data);
+            try {
+
+                const response = await fetch('http://localhost:5000/api/recipes');
+                const data = await response.json()
+                if (response.status === 200) {
+                    setRecipes(data)
+                } else {
+                    throw new Error(data.error || "Unknown server error");
+                }
+            } catch (error) {
+                throw new Error(error)
+            }
         };
         fetchRecipes();
     }, []);
@@ -18,7 +27,7 @@ const RecipeContent = () => {
         <>
             {recipes.map((recipe) => (
                 <Box>
-                    <img src={`http://localhost:5000/${recipe.image}`} alt={recipe.name} />
+                    <img src={recipe.image} alt={recipe.name} />
                     <Box>
                         <h1>{recipe.name}</h1>
                         <h2>Ingredients: </h2>

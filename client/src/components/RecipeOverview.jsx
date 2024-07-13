@@ -1,7 +1,6 @@
 import { useOutletContext, useParams } from "react-router-dom"
-import { Box, Typography, styled } from "@mui/material";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { Box, Typography, styled } from "@mui/material"
+import { useState, useEffect } from "react"
 
 const RecipeOverviewContainer = styled(Box)({
     padding: "4rem",
@@ -40,14 +39,23 @@ const RecipeOverview = () => {
     const { openDrawer } = useOutletContext();
     const { id } = useParams();
     const [recipe, setRecipe] = useState({});
-    const [user, setUser] = useState({});
-    const [error, setError] = useState('');
+    const [user, setUser] = useState({})
     const val = recipe.user
 
     useEffect(() => {
         const fetchRecipe = async () => {
-            const { data } = await axios.get(`http://localhost:5000/api/recipes/${id}`);
-            setRecipe(data);
+            try {
+                const response = await fetch(`http://localhost:5000/api/recipes/${id}`);
+                const data = await response.json()
+                if (response.status === 200) {
+                    setRecipe(data)
+                    return data
+                } else {
+                    throw new Error(data.error || "Unknown server error");
+                }
+            } catch (error) {
+                throw new Error(error)
+            }
         };
         fetchRecipe();
     }, [id]);
@@ -55,10 +63,17 @@ const RecipeOverview = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const { data } = await axios.get(`http://localhost:5000/api/users/${val}`);
-                setUser(data);
+                const response = await fetch(`http://localhost:5000/api/users/${val}`, {
+                    credentials: 'include',
+                });
+                const data = await response.json()
+                if (response.ok) {
+                    setUser(data)
+                } else {
+                    throw new Error(data.error || "Unknown server error");
+                }
             } catch (error) {
-                setError('Failed to fetch user');
+
             }
         };
 
@@ -69,7 +84,7 @@ const RecipeOverview = () => {
             <RecipeOverviewContainer style={openDrawer ? { marginLeft: 280 } : { marginLeft: 0 }}>
                 <h1 className="username">Posted by:<span style={{ color: "#eb6b16" }}> {user.username}</span></h1>
                 <Box>
-                    <img src={`http://localhost:5000/${recipe.image}`} alt={recipe.name} />
+                    <img src={recipe.image} alt={recipe.name} />
                     <Box>
                         <h1 className="recipe-heading food-item">{recipe.name}</h1>
                         <Box>
@@ -80,17 +95,17 @@ const RecipeOverview = () => {
                             <h2 className="recipe-heading">Ingredients used:</h2>
                             <ul>
                                 {recipe.ingredients && recipe.ingredients.map((ing, index) => (
-                                    <li key={index}>{ing}</li>
+                                    <li key={index}>{Array.isArray(ing) ? ing.join(', ') : ing}</li>
                                 ))}
                             </ul>
                         </Box>
                         <Box>
                             <h2 className="recipe-heading">Steps to make dish:</h2>
-                            <ul>
+                            <ol>
                                 {recipe.steps && recipe.steps.map((step, index) => (
-                                    <li key={index}>{step}</li>
+                                    <li key={index}>{Array.isArray(step) ? step.join(', ') : step}</li>
                                 ))}
-                            </ul>
+                            </ol>
                         </Box>
                     </Box>
                 </Box>

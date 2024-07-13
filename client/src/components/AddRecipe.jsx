@@ -1,6 +1,6 @@
-import { Box, Typography, styled, TextField, Button, inputLabelClasses, } from "@mui/material";
+import { Box, Typography, styled, TextField, Button, inputLabelClasses } from "@mui/material";
 import { useNavigate, useOutletContext } from "react-router-dom"
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const AddRecipeForm = styled(Box)({
     padding: "4rem",
@@ -55,33 +55,54 @@ const AddRecipe = () => {
     const { openDrawer } = useOutletContext();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [ingredients, setIngredients] = useState([]);
+    let [ingredients, setIngredients] = useState('');
     const [image, setImage] = useState(null);
-    const [steps, setSteps] = useState([]);
+    let [steps, setSteps] = useState('');
     const [error, setError] = useState('');
+    const imgRef = useRef(null);
+    const [loading, setLoading] = useState(false);
 
     const addRecipeHandler = async (e) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append('name', name);
-        formData.append('description', description);
-        formData.append('ingredients', ingredients);
-        formData.append('image', image);
-        formData.append('steps', steps);
+        setLoading(true);
+        const recipeData = {
+            name,
+            description,
+            ingredients: Array.isArray(ingredients) ? ingredients : ingredients.split(',').map(item => item.trim()),
+            image,
+            steps: Array.isArray(steps) ? steps : steps.split(',').map(item => item.trim())
+        };
 
-        const response = await fetch('http://localhost:5000/api/recipes', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            },
-            body: formData,
-        });
-
-        if (response.ok) {
+        try {
+            const response = await fetch('http://localhost:5000/api/recipes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(recipeData),
+            });
             const data = await response.json();
-            navigate("/resipes")
-        } else {
-            setError('Failed to add recipe, Please refresh the page and try again');
+
+            if (response.status === 201) {
+                navigate('/recipes');
+            } else {
+                setError(data.error || 'Unknown server error');
+            }
+        } catch (error) {
+        } finally {
+            setLoading(false)
+        }
+    };
+
+    const handleImgChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setImage(reader.result);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -94,6 +115,7 @@ const AddRecipe = () => {
                     <Box style={{ width: "45%" }}>
                         <TextField
                             value={name}
+                            name="name"
                             onChange={(e) => setName(e.target.value)}
                             label="Name"
                             variant="outlined"
@@ -114,6 +136,7 @@ const AddRecipe = () => {
 
                         <TextField multiline rows={7}
                             value={description}
+                            name="description"
                             onChange={(e) => setDescription(e.target.value)}
                             label="Recipe description"
                             variant="outlined"
@@ -131,8 +154,9 @@ const AddRecipe = () => {
                             }}
                         />
                         <TextField multiline rows={3}
-                            value={ingredients.join(', ')}
-                            onChange={(e) => setIngredients(e.target.value.split(','))}
+                            value={ingredients}
+                            name="ingredients"
+                            onChange={(e) => setIngredients(e.target.value)}
                             label="Ingredients (seperated by comma)"
                             variant="outlined"
                             fullWidth
@@ -153,12 +177,13 @@ const AddRecipe = () => {
                     <Box className="right-child">
                         <Box id="image-field">
                             <Typography>Add an image</Typography>
-                            <TextField type="file" name="image" placeholder="Upload an image" className="recipe-details" onChange={(e) => setImage(e.target.files[0])} />
+                            <input type='file' accept="image/*" ref={imgRef} className="recipe-details" onChange={handleImgChange} name="image" />
                         </Box>
 
                         <TextField multiline rows={7}
-                            value={steps.join(', ')}
-                            onChange={(e) => setSteps(e.target.value.split(','))}
+                            value={steps}
+                            name="steps"
+                            onChange={(e) => setSteps(e.target.value)}
                             label="Steps  (seperated by comma)"
                             variant="outlined"
                             fullWidth
@@ -179,7 +204,7 @@ const AddRecipe = () => {
                             color="primary"
                             type="submit"
                         >
-                            PUBLISH RECIPE
+                            {!loading ? "PUBLISH RECIPE" : "PUBLISHING..."}
                         </Button>
                     </Box>
                 </form>

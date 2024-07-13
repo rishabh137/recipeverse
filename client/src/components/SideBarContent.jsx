@@ -1,6 +1,8 @@
 import { Box, List, ListItem, styled } from "@mui/material"
 import { NavLink } from "react-router-dom"
 import { SIDEBAR_DATA } from "../config/sidebar.config"
+import { useContext } from "react";
+import { UserContext } from "../App";
 
 const Container = styled(Box)({
     '& >ul > li> .active': {
@@ -22,7 +24,7 @@ const Container = styled(Box)({
 })
 
 const SideBarContent = () => {
-    var isToken = localStorage.getItem("token")
+    const { authUser } = useContext(UserContext)
 
     return (
         <>
@@ -31,7 +33,7 @@ const SideBarContent = () => {
                     {
                         SIDEBAR_DATA.map(data => (
                             <ListItem key={data.id}>
-                                <NavLink to={isToken ? data.link : "/login"}>{data.title}</NavLink>
+                                <NavLink to={authUser ? data.link : "/login"}>{data.title}</NavLink>
                             </ListItem>
                         ))
                     }

@@ -1,5 +1,4 @@
 import { TextField, inputLabelClasses, Button, styled, Box } from "@mui/material"
-import axios from "axios"
 import { useState } from "react"
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -23,26 +22,40 @@ const StyledForm = styled(Box)({
 
 const Signup = () => {
     const navigate = useNavigate()
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [formData, setFormData] = useState({
+        username: "",
+        email: "",
+        password: "",
+    });
     const [error, setError] = useState('');
 
     const submitRegistration = async (e) => {
         setError("")
-        e.preventDefault();
+        e.preventDefault()
         try {
-            const { data } = await axios.post('http://localhost:5000/api/users/register', {
-                username,
-                email,
-                password,
+            const response = await fetch('http://localhost:5000/api/users/register', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(formData)
             });
-            navigate("/login")
+            const data = await response.json()
+
+            if (response.status === 201) {
+                navigate("/login")
+                return data
+            } else {
+                setError('Failed to register');
+            }
         } catch (error) {
-            console.error(error);
             setError('Failed to register');
         }
     }
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     return (
         <>
@@ -52,8 +65,9 @@ const Signup = () => {
                 <form onSubmit={submitRegistration}>
                     <TextField
                         required
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        value={formData.username}
+                        name="username"
+                        onChange={handleInputChange}
                         autoComplete="off"
                         label="Your name"
                         variant="outlined"
@@ -72,8 +86,9 @@ const Signup = () => {
                     />
                     <TextField
                         required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email}
+                        name="email"
+                        onChange={handleInputChange}
                         autoComplete="off"
                         label="Email"
                         variant="outlined"
@@ -92,8 +107,9 @@ const Signup = () => {
                     />
                     <TextField
                         required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData.password}
+                        name="password"
+                        onChange={handleInputChange}
                         autoComplete="off"
                         label="Password"
                         variant="outlined"

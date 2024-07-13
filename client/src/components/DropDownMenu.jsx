@@ -1,6 +1,8 @@
 import { Logout } from "@mui/icons-material"
 import { Box, Typography, styled } from "@mui/material"
 import { useNavigate } from "react-router-dom"
+import { useContext } from "react";
+import { UserContext } from "../App";
 
 const DropDownSection = styled(Box)({
     position: "absolute",
@@ -52,22 +54,36 @@ const DropDownSection = styled(Box)({
 
 })
 
-const DropDownMenu = ({ setShowDropDown }) => {
+const DropDownMenu = () => {
     const navigate = useNavigate()
+    const { authUser, setAuthUser } = useContext(UserContext)
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        setShowDropDown(false)
-        navigate("/login")
+    const handleLogout = async () => {
+        try {
+            const response = await fetch("http://localhost:5000/api/users/logout", {
+                method: "POST",
+                credentials: 'include'
+            })
+
+            if (response.ok) {
+                setAuthUser(null)
+                navigate("/login")
+            } else {
+                const data = await response.json()
+                throw new Error(data.error || "Unknown server error");
+            }
+
+        } catch (error) {
+            throw new Error(error)
+        }
     }
 
     return (
         <>
             <DropDownSection>
                 <Box id="user-info">
-                    <Typography className="user-icon">{localStorage.getItem("username").slice(0, 1).toUpperCase()}</Typography>
-                    <Typography>{localStorage.getItem("username")}</Typography>
+                    <Typography className="user-icon">{authUser.slice(0, 1).toUpperCase()}</Typography>
+                    <Typography>{authUser}</Typography>
                 </Box>
                 <Box id="user-action">
                     <p onClick={handleLogout}><Logout /> Sign Out</p>

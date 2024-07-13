@@ -1,6 +1,6 @@
 import { TextField, Box, inputLabelClasses, Button, styled } from "@mui/material"
-import axios from "axios"
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { UserContext } from "../App";
 import { NavLink, useNavigate } from "react-router-dom"
 
 const StyledForm = styled(Box)({
@@ -22,24 +22,39 @@ const StyledForm = styled(Box)({
 
 const Login = () => {
     const navigate = useNavigate()
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const { setAuthUser } = useContext(UserContext)
+    const [formData, setFormData] = useState({
+        email: "test@gmail.com",
+        password: "test",
+    });
     const [error, setError] = useState('');
 
     const submitLogin = async (e) => {
         setError("")
         e.preventDefault();
         try {
-            const { data } = await axios.post('http://localhost:5000/api/users/login', {
-                email,
-                password,
+            const response = await fetch('http://localhost:5000/api/users/login', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: 'include',
+                body: JSON.stringify(formData)
             });
-            navigate('/recipes');
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('username', data.username);
+            const data = await response.json();
+            if (response.ok) {
+                setAuthUser(data.username)
+                navigate('/recipes')
+            } else {
+                throw new Error(data.error || 'Unknown server error');
+            }
         } catch (error) {
             setError('Invalid email or password');
         }
+    };
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
 
@@ -52,8 +67,9 @@ const Login = () => {
                 <form onSubmit={submitLogin}>
                     <TextField
                         required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email}
+                        name="email"
+                        onChange={handleInputChange}
                         autoComplete="off"
                         label="Email"
                         variant="outlined"
@@ -72,8 +88,9 @@ const Login = () => {
                     />
                     <TextField
                         required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData.password}
+                        name="password"
+                        onChange={handleInputChange}
                         autoComplete="off"
                         label="Password"
                         variant="outlined"
@@ -99,7 +116,6 @@ const Login = () => {
                     </Button>
                 </form>
                 <NavLink to="/signup" style={{ marginTop: "20px" }}>Don't have an account?</NavLink>
-                <NavLink to="/" style={{ marginTop: "20px" }}>Return to Home page</NavLink>
             </StyledForm>
         </>
     )

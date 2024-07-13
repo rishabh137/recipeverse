@@ -3,7 +3,8 @@ import { Search, Menu as MenuIcon, } from "@mui/icons-material"
 import CloseIcon from '@mui/icons-material/Close';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import DropDownMenu from "./DropDownMenu"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useContext } from "react"
+import { UserContext } from "../App";
 import { NavLink } from "react-router-dom";
 import debounce from 'lodash/debounce';
 
@@ -101,6 +102,7 @@ const Header = ({ toggleDrawer }) => {
     const [showDialog, setShowDialog] = useState(false)
     const [query, setQuery] = useState('');
     const [recipes, setRecipes] = useState([]);
+    const { authUser } = useContext(UserContext)
 
     const searchRecipes = async (query) => {
         if (query.trim() === '') {
@@ -144,7 +146,7 @@ const Header = ({ toggleDrawer }) => {
                     <InputBase placeholder="Search recipe" value={query} onChange={(e) => setQuery(e.target.value)} style={{ color: "#111" }} />
                     {recipes.map((recipe) => (
                         <div key={recipe._id} style={{ color: "#111" }}>
-                            <img src={`http://localhost:5000/${recipe.image}`} alt="" style={{ width: "100px", marginRight: "20px" }} />
+                            <img src={recipe.image} alt="" style={{ width: "100px", marginRight: "20px" }} />
                             <Box>
                                 <h2>{recipe.name}</h2>
                                 <p>{recipe.description.slice(0, 100)}...</p>
@@ -156,9 +158,9 @@ const Header = ({ toggleDrawer }) => {
 
                 <Box>
                     {
-                        localStorage.getItem("token") ?
+                        authUser ?
                             <Box>
-                                <p onClick={callDropMenu} className="userIcon">{localStorage.getItem("username").slice(0, 1).toUpperCase()}<KeyboardArrowDownIcon /></p>
+                                <p onClick={callDropMenu} className="userIcon">{authUser.slice(0, 1).toUpperCase()}<KeyboardArrowDownIcon /></p>
                             </Box>
                             :
                             <NavLink to="/login" style={{
@@ -175,7 +177,7 @@ const Header = ({ toggleDrawer }) => {
 
                         showDropDown ?
                             <>
-                                <DropDownMenu setShowDropDown={setShowDropDown} />
+                                <DropDownMenu />
                             </>
                             :
                             ""
